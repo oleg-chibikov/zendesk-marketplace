@@ -1,0 +1,9 @@
+﻿<Project Sdk="Microsoft.NET.Sdk" >
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="LiteDb" />
+  </ItemGroup>
+  <PropertyGroup>
+    <NoWarn>CS8618</NoWarn>
+  </PropertyGroup>
+</Project>

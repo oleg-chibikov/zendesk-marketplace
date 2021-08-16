@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\organizations.json" />
+    <None Remove="Resources\tickets.json" />
+    <None Remove="Resources\users.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\organizations.json" />
+    <EmbeddedResource Include="Resources\tickets.json" />
+    <EmbeddedResource Include="Resources\users.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LiteDB" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Contracts\Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
