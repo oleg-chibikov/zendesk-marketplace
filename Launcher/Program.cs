@@ -25,25 +25,17 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Launcher
                     return bson.AsDateTime.ToUniversalTime();
                 });
 
-            var organizationFormatter = new OrganizationFormatter();
-            var userFormatter = new UserFormatter(organizationFormatter);
-            var ticketFormatter = new TicketFormatter(organizationFormatter, userFormatter);
-
             using var organizationRepository = await CreateRepositoryAsync<Organization>().ConfigureAwait(false);
             using var usersRepository = await CreateRepositoryAsync<User>().ConfigureAwait(false);
             using var ticketsRepository = await CreateRepositoryAsync<Ticket>().ConfigureAwait(false);
 
+            var userRelatedEntitiesLoader = new UserRelatedEntitiesLoader(organizationRepository);
+            var ticketRelatedEntitiesLoader = new TicketRelatedEntitiesLoader(organizationRepository, usersRepository, userRelatedEntitiesLoader);
+
             var relatedEntityLoaders = new Dictionary<Type, IRelatedEntitiesLoader>
             {
-                { typeof(User), new UserRelatedEntitiesLoader(organizationRepository) },
-                { typeof(Ticket), new TicketRelatedEntitiesLoader(organizationRepository, usersRepository) }
-            };
-
-            var entityFormatters = new Dictionary<Type, IEntityFormatter>
-            {
-                { typeof(User), userFormatter },
-                { typeof(Ticket), ticketFormatter },
-                { typeof(Organization), organizationFormatter }
+                { typeof(User), userRelatedEntitiesLoader },
+                { typeof(Ticket), ticketRelatedEntitiesLoader }
             };
 
             var repositories = new Dictionary<Type, IEntitySearcher>
@@ -62,7 +54,7 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Launcher
                 }
 
                 PropertyInfo? propertyInfo;
-                while ((propertyInfo = GetFieldInfoFromUserInput(entityType)) == null)
+                while ((propertyInfo = GetPropertyInfoFromUserInput(entityType)) == null)
                 {
                 }
 
@@ -73,7 +65,7 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Launcher
 
                 if (!repositories.TryGetValue(entityType, out var entitySearcher))
                 {
-                    throw new InvalidOperationException($"Entity formatter is not registered for {entityType.Name}");
+                    throw new InvalidOperationException($"Repository is not registered for {entityType.Name}");
                 }
 
                 var searchResults = entitySearcher.Find(propertyInfo.Name, searchValue, propertyInfo.IsCollection()).ToArray();
@@ -92,14 +84,9 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Launcher
                     }
                 }
 
-                if (!entityFormatters.TryGetValue(entityType, out var entityFormatter))
-                {
-                    throw new InvalidOperationException($"Entity formatter is not registered for {entityType.Name}");
-                }
-
-                var formattedResults = searchResults.Select(x=>x.ToString());
+                var formattedResults = searchResults.Select(x => x.ToString());
                 Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(string.Join(Environment.NewLine, formattedResults));
+                Console.WriteLine(string.Join(Environment.NewLine + "---------------------" + Environment.NewLine, formattedResults));
                 Console.ForegroundColor = ConsoleColor.White;
                 Console.WriteLine("Do you wish to continue? (y/n)");
                 var key = Console.ReadLine();
@@ -146,13 +133,19 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Launcher
             return searchValue;
         }
 
-        static PropertyInfo? GetFieldInfoFromUserInput(Type entityType)
+        static PropertyInfo? GetPropertyInfoFromUserInput(Type entityType)
         {
             Console.WriteLine("Please choose a field to search");
             var i = 0;
             var properties = new Dictionary<int, PropertyInfo>();
-            foreach (var propertyInfo in entityType.GetProperties())
+            foreach (var propertyInfo in entityType.GetProperties().OrderBy(x => x.Name))
             {
+                var isCustomType = propertyInfo.IsCustomType();
+                if (isCustomType)
+                {
+                    continue;
+                }
+
                 properties.Add(++i, propertyInfo);
                 Console.WriteLine($"{i} - {propertyInfo.Name}");
             }

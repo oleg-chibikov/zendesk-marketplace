@@ -27,6 +27,9 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.DAL
 
         public IEnumerable<object> Find(string propertyName, object value, bool isCollection)
         {
+            _ = propertyName ?? throw new ArgumentNullException(nameof(propertyName));
+            _ = value ?? throw new ArgumentNullException(nameof(value));
+
             var queryPropertyName = (propertyName == "Id" ? "_id" : propertyName) + (isCollection ? "[*] ANY" : null);
             var bson = value.GetType() == typeof(DateTimeOffset) ? BsonMapper.Global.Serialize(value) : new BsonValue(value);
             return _liteCollection.Find(Query.EQ(queryPropertyName, bson)).Cast<object>();
