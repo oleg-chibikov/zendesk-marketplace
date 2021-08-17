@@ -14,10 +14,12 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.DAL
         readonly IResourceLoader<TEntity> _resourceLoader;
         readonly ILiteDatabase _liteDatabase;
         readonly ILiteCollection<TEntity> _liteCollection;
+        readonly IRelatedEntitiesLoader? _relatedEntitiesLoader;
 
-        public LiteDbRepository(IResourceLoader<TEntity> resourceLoader)
+        public LiteDbRepository(IResourceLoader<TEntity> resourceLoader, IRelatedEntitiesLoader? relatedEntitiesLoader)
         {
             _resourceLoader = resourceLoader ?? throw new ArgumentNullException(nameof(resourceLoader));
+            _relatedEntitiesLoader = relatedEntitiesLoader;
             var type = typeof(TEntity);
             var path = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, AppDomain.CurrentDomain.RelativeSearchPath ?? string.Empty), $"{type.Name}.db");
             _initialDataLoadRequired = !File.Exists(path);
@@ -25,19 +27,38 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.DAL
             _liteCollection = _liteDatabase.GetCollection<TEntity>(type.Name);
         }
 
-        public IEnumerable<object> Find(string propertyName, object value, bool isCollection)
+        public IEnumerable<object> Find(string propertyName, object? value, bool isCollection)
         {
             _ = propertyName ?? throw new ArgumentNullException(nameof(propertyName));
-            _ = value ?? throw new ArgumentNullException(nameof(value));
 
             var queryPropertyName = (propertyName == "Id" ? "_id" : propertyName) + (isCollection ? "[*] ANY" : null);
-            var bson = value.GetType() == typeof(DateTimeOffset) ? BsonMapper.Global.Serialize(value) : new BsonValue(value);
-            return _liteCollection.Find(Query.EQ(queryPropertyName, bson)).Cast<object>();
+            var bson = value is DateTimeOffset ? BsonMapper.Global.Serialize(value) : new BsonValue(value);
+            var entities = _liteCollection.Find(Query.EQ(queryPropertyName, bson)).Cast<object>().ToArray();
+            if (_relatedEntitiesLoader != null)
+            {
+                foreach (var entity in entities)
+                {
+                    _relatedEntitiesLoader.LoadRelatedEntities(entity);
+                }
+            }
+
+            return entities;
         }
 
         public TEntity? FindById<TId>(TId value)
         {
-            return _liteCollection.FindById(new BsonValue(value));
+            var entity = _liteCollection.FindById(new BsonValue(value));
+            if (entity == null)
+            {
+                return default;
+            }
+
+            if (_relatedEntitiesLoader != null)
+            {
+                _relatedEntitiesLoader.LoadRelatedEntities(entity);
+            }
+
+            return entity;
         }
 
         public async Task LoadInitialDataIfNeededAsync()

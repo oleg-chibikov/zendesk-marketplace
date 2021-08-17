@@ -16,10 +16,5 @@ namespace OlegChibikov.ZendeskInterview.Marketplace.Contracts.Data
         public DateTimeOffset CreatedAt { get; set; }
 
         public IReadOnlyCollection<string> Tags { get; set; }
-
-        public override string? ToString()
-        {
-            return this.PropertyList();
-        }
     }
 }

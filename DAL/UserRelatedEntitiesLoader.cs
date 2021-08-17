@@ -2,7 +2,7 @@
 using OlegChibikov.ZendeskInterview.Marketplace.Contracts;
 using OlegChibikov.ZendeskInterview.Marketplace.Contracts.Data;
 
-namespace OlegChibikov.ZendeskInterview.Marketplace.Core
+namespace OlegChibikov.ZendeskInterview.Marketplace.DAL
 {
     public sealed class UserRelatedEntitiesLoader : IRelatedEntitiesLoader
     {

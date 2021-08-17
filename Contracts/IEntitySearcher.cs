@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace OlegChibikov.ZendeskInterview.Marketplace.Contracts
 {
-    public interface IEntitySearcher
+    public interface IEntitySearcher : IDisposable
     {
-        IEnumerable<object> Find(string propertyName, object value, bool isCollection);
+        IEnumerable<object> Find(string propertyName, object? value, bool isCollection);
     }
 }
