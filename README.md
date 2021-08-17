@@ -8,4 +8,4 @@ A coding challenge for Zendesk interview
 
 ## Notes
 * I didn't write tests for database-related classes as the majority of logic is happening inside the LiteDb engine, which is already tested
-* The higher amounts of data should be handled efficiently as every Property of the Domain objects (including arrays) is indexed by calling EnsureIndex in the repository. I verified that indexes are called by checking the database and seeing the execution plan (EXPLAIN SELECT...) in LiteDB Studio
+* Higher amounts of data should be handled efficiently as every Property of the Domain objects (including arrays) is indexed by calling EnsureIndex in the repository. I verified that indexes are called by checking the database and seeing the execution plan (EXPLAIN SELECT...) in LiteDB Studio
